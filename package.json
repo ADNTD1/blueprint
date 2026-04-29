@@ -21,6 +21,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
-        "@supabase/supabase-js": "^2.99.2"
+        "@supabase/supabase-js": "^2.99.2",
+        "ziggy-js": "^2.6.2"
     }
 }
