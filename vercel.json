@@ -5,6 +5,7 @@
   "env": {
     "APP_ENV": "production",
     "APP_DEBUG": "false",
+    "APP_URL": "https://blueprint-black-sigma.vercel.app",
     "LOG_CHANNEL": "stderr",
     "SESSION_DRIVER": "cookie",
     "CACHE_STORE": "array",
