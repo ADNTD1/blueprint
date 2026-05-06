@@ -87,12 +87,46 @@ const extractTasks = (content) => {
         .replace(/```$/i, '')
         .trim();
 
-    try {
-        const payload = JSON.parse(cleaned);
-        return Array.isArray(payload.tasks) ? payload.tasks : null;
-    } catch {
-        return null;
+    const parsePayload = (value) => {
+        try {
+            const payload = JSON.parse(value);
+
+            if (Array.isArray(payload)) return payload;
+            if (Array.isArray(payload?.tasks)) return payload.tasks;
+
+            return null;
+        } catch {
+            return null;
+        }
+    };
+
+    const candidates = [cleaned];
+
+    if (/^"title"\s*:/i.test(cleaned)) {
+        candidates.push(`{"tasks":[{${cleaned}`);
     }
+
+    const firstArray = cleaned.indexOf('[');
+    const lastArray = cleaned.lastIndexOf(']');
+    if (firstArray !== -1 && lastArray > firstArray) {
+        candidates.push(cleaned.slice(firstArray, lastArray + 1));
+    }
+
+    const firstObject = cleaned.indexOf('{');
+    const lastObject = cleaned.lastIndexOf('}');
+    if (firstObject !== -1 && lastObject > firstObject) {
+        candidates.push(cleaned.slice(firstObject, lastObject + 1));
+    }
+
+    for (const candidate of candidates) {
+        const tasks = parsePayload(candidate);
+
+        if (Array.isArray(tasks) && tasks.some((task) => task?.title)) {
+            return tasks;
+        }
+    }
+
+    return null;
 };
 
 const escapeHtml = (value) => String(value || '')
