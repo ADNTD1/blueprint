@@ -43,25 +43,28 @@ class ProjectAiChatController extends Controller
                 ->values()
                 ->all();
             $context = $this->compactContext($projectContext);
+            $taskGenerationRequested = $this->isTaskGenerationRequest($validated['message']);
 
             $messages = [
                 [
                     'role' => 'system',
                     'content' => implode(' ', [
                         'Eres Blueprint AI, un copiloto profesional para gestion de proyectos de software.',
-                        'En caso de recibir un prompt no dirigido al area de software, responde brevemente explicando tu proposito.',
-                        'Responde en espanol claro y accionable.',
-                        'Ayuda con backlog, riesgos, criterios de aceptacion, planeacion y seguimiento.',
+                        'Tu dominio permitido es exclusivamente gestion de proyectos de software: backlog, tareas, requisitos, riesgos, sprints, QA, estimaciones, criterios de aceptacion, roles del equipo, entregas y seguimiento.',
+                        'Si el mensaje no esta relacionado con proyectos de software o gestion tecnica, responde solo: "Puedo ayudarte con planeacion, backlog, riesgos y seguimiento de proyectos de software. Reformula tu solicitud dentro de ese contexto."',
+                        'No respondas preguntas generales, personales, de entretenimiento, legales, medicas, financieras, politicas o de otros dominios.',
+                        'Responde en espanol claro y accionable cuando la solicitud este dentro del dominio permitido.',
                         'Usa el contexto del proyecto como fuente principal. No inventes datos especificos que no esten en el contexto o en el mensaje del usuario.',
                         'Antes de proponer tareas nuevas revisa las tareas existentes del contexto y evita duplicados por titulo, descripcion o intencion.',
                         'Si el usuario pide resumen, riesgos o criterios de aceptacion, usa las tareas existentes, estados, prioridades, fechas, estimaciones y miembros del contexto.',
-                        'Cuando el usuario pida generar tareas, backlog, subtareas o plan de trabajo, responde solo con JSON valido, sin markdown, sin texto antes ni despues.',
-                        'El JSON para tareas debe tener exactamente esta estructura: {"tasks":[{"title":"string","description":"string","priority":"low|medium|high","estimated_hours":number,"story_points":number|null,"due_date":"YYYY-MM-DD|null","status_id":1}]}',
+                        $taskGenerationRequested
+                            ? 'El usuario solicito generar tareas/backlog. Responde unicamente con JSON valido. No uses markdown. No uses bloques ```json. No agregues explicaciones antes ni despues. La respuesta debe empezar exactamente con {"tasks":[ y terminar exactamente con ]}.'
+                            : 'El usuario no solicito generar tareas/backlog. Responde en texto normal y nunca devuelvas JSON.',
+                        'El JSON para tareas debe tener exactamente esta estructura: {"tasks":[{"title":"string","description":"string","priority":"low|medium|high","estimated_hours":number,"story_points":number|null,"due_date":null,"status_id":1}]}',
                         'Cada tarea debe cuadrar con la tabla tasks: title requerido, description puede ser texto breve, priority solo low medium o high, estimated_hours numero mayor o igual a 0, story_points numero entero mayor o igual a 0 o null, due_date fecha YYYY-MM-DD o null, status_id siempre 1 para tareas nuevas.',
-                        'Genera entre 6 y 10 tareas bien agrupadas y evita listas excesivamente largas.',
+                        'Si generas tareas, genera entre 6 y 10 tareas bien agrupadas y evita listas excesivamente largas.',
                         'No uses fechas pasadas. Si el usuario no da fechas futuras concretas, usa due_date null.',
                         'No incluyas id, project_id, created_by, created_at, updated_at, task_status ni task_assignments porque el sistema los agrega o relaciona automaticamente.',
-                        'Si el usuario pide algo que no sea generar tareas, responde en texto normal y profesional.',
                         "Project ID: {$project}.",
                         'Contexto actual del proyecto en JSON compacto:',
                         $context,
@@ -303,5 +306,13 @@ class ProjectAiChatController extends Controller
         }
 
         return strlen($text) > $limit ? substr($text, 0, $limit) : $text;
+    }
+
+    private function isTaskGenerationRequest(string $message): bool
+    {
+        return (bool) preg_match(
+            '/\b(genera|generar|crea|crear|sugiere|sugerir|propon|proponer|desglosa|desglosar|backlog|tareas|subtareas|plan de trabajo|historias de usuario|user stories)\b/i',
+            $message
+        );
     }
 }
