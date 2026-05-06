@@ -111,9 +111,11 @@ class ProjectAiChatController extends Controller
             report($exception);
 
             return response()->json([
-                'message' => app()->hasDebugModeEnabled()
-                    ? $exception->getMessage()
-                    : 'El copiloto tuvo un error interno. Revisa las variables GROQ_API_KEY, VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Vercel.',
+                'message' => sprintf(
+                    'Error interno del copiloto: %s - %s',
+                    class_basename($exception),
+                    $exception->getMessage() ?: 'sin detalle'
+                ),
             ], 500);
         }
     }
