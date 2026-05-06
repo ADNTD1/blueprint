@@ -6,7 +6,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class ProjectAiChatController extends Controller
@@ -99,6 +101,12 @@ class ProjectAiChatController extends Controller
             return response()->json([
                 'message' => 'No se pudo conectar con Groq o Supabase desde el servidor. Intenta de nuevo en unos segundos.',
             ], 502);
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (HttpExceptionInterface $exception) {
+            return response()->json([
+                'message' => $exception->getMessage() ?: 'No se pudo completar la solicitud del copiloto.',
+            ], $exception->getStatusCode());
         } catch (Throwable $exception) {
             report($exception);
 
