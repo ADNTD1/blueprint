@@ -29,6 +29,7 @@ const submit = async () => {
             email: form.value.email,
             password: form.value.password,
             options: {
+                emailRedirectTo: `${window.location.origin}/verify-email`,
                 data: {
                     full_name: form.value.name,
                 }
