@@ -111,11 +111,7 @@ class ProjectAiChatController extends Controller
             report($exception);
 
             return response()->json([
-                'message' => sprintf(
-                    'Error interno del copiloto: %s - %s',
-                    class_basename($exception),
-                    $exception->getMessage() ?: 'sin detalle'
-                ),
+                'message' => 'El copiloto tuvo un error interno. Intenta de nuevo en unos segundos.',
             ], 500);
         }
     }
@@ -176,6 +172,7 @@ class ProjectAiChatController extends Controller
         return [
             'project' => $projectResponse->json('0') ?? [],
             'tasks' => collect($tasksResponse->json() ?? [])
+                ->filter(fn ($task) => is_array($task))
                 ->map(function (array $task): array {
                     $assignment = $this->firstRelation($task['task_assignments'] ?? null);
 
@@ -193,6 +190,7 @@ class ProjectAiChatController extends Controller
                 })
                 ->all(),
             'members' => collect($membersResponse->json() ?? [])
+                ->filter(fn ($member) => is_array($member))
                 ->map(fn (array $member): array => [
                     'name' => $member['profiles']['name'] ?? $member['profiles']['email'] ?? null,
                     'role' => $member['project_role'] ?? null,
