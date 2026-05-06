@@ -302,6 +302,6 @@ class ProjectAiChatController extends Controller
             return null;
         }
 
-        return mb_strlen($text) > $limit ? mb_substr($text, 0, $limit) : $text;
+        return strlen($text) > $limit ? substr($text, 0, $limit) : $text;
     }
 }
